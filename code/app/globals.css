@@ -1,0 +1,328 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --background: #0b0d12;
+  --surface: #141821;
+  --surface-2: #1b202b;
+  --border: #262c3a;
+  --foreground: #e8eaf0;
+  --muted: #9aa1b2;
+  --accent: #8b5cf6;
+  --accent-dim: #b39dff;
+  --on-accent: #ffffff;
+  --sage: #22d3ee;
+  --sun: #fbbf24;
+  /* Marker-pen highlight and text selection tint. */
+  --highlight: #8b5cf6;
+  /* "Ink" panels: the dark terminal-style cards and the ship pipeline. */
+  --ink: #07080c;
+  --ink-raised: #121620;
+  --ink-deep: #040507;
+  --on-ink: #e8eaf0;
+  /* Bare RGB channels so shadows/glows can take an alpha:
+     rgb(var(--shadow-rgb) / 0.3). */
+  --shadow-rgb: 0 0 0;
+  --accent-rgb: 139 92 246;
+  /* The one easing curve used for every reveal/hover/press on the site:
+     a springy "expo out" (borrowed from Framer/Linear-style motion) that
+     decelerates with some weight to it, instead of flat ease-out. */
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-sage: var(--sage);
+  --color-sun: var(--sun);
+  --color-on-accent: var(--on-accent);
+  --color-highlight: var(--highlight);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-sora);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--highlight);
+  color: var(--foreground);
+}
+
+/* No-JS fallback for reveal-gated content ([data-reveal], set in
+   reveal.tsx and agent-trace.tsx) lives inline inside a <noscript> block
+   in app/layout.tsx, not here. It must only ever apply when scripting
+   is disabled, and a rule in this always-loaded stylesheet would instead
+   apply unconditionally and permanently break the reveal animations. */
+
+/* Marker-pen highlight: wrap a word in <Highlight>. Sweeps in left-to-right
+   via background-size once its .highlight-in class lands (see highlight.tsx);
+   starts fully painted (0.2s) so nothing ever depends on JS to be legible. */
+.highlight {
+  background-image: linear-gradient(
+    104deg,
+    transparent 0.9%,
+    color-mix(in srgb, var(--highlight) 55%, transparent) 2.4%,
+    color-mix(in srgb, var(--highlight) 45%, transparent) 97%,
+    transparent
+  );
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  padding: 0 0.15em;
+  border-radius: 0.2em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-size 0.65s var(--ease-premium);
+}
+.highlight-in {
+  background-size: 100% 100%;
+}
+
+/* Reusable card hover-lift: warm shadow + border on hover. Deliberately
+   leaves `transform` alone, pair with Tailwind's own hover:-translate-y-*
+   utility at the call site so it composes with any existing rotate/scale
+   instead of clobbering it. */
+.hover-lift {
+  transition:
+    box-shadow 0.4s var(--ease-premium),
+    border-color 0.4s ease;
+}
+.hover-lift:hover {
+  box-shadow: 0 20px 40px -24px rgba(43, 36, 30, 0.35);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+/* Tactile button press, weightier spring feel */
+.btn-press {
+  transition:
+    transform 0.35s var(--ease-premium),
+    opacity 0.2s ease,
+    box-shadow 0.35s var(--ease-premium);
+}
+.btn-press:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+.btn-press:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Soft ambient glow on hover, reserved for the primary accent CTAs, the
+   one place on the page that should feel like it's inviting a click. */
+.glow-hover {
+  transition: box-shadow 0.4s var(--ease-premium);
+}
+.glow-hover:hover {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
+    0 8px 30px -6px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Ambient field: the "next-gen AI" background texture (see
+   components/ambient-field.tsx). Slow drifting gradient auras + a faint
+   pulsing signal network. All motion is large-amplitude but very slow
+   (18-26s loops), so it reads as atmosphere, not distraction.
+
+   Owner feedback (still feels rough on mobile): these three blobs carry a
+   large blur-3xl filter AND animate transform, continuously, on every page
+   (the "site" variant runs in the root layout). Without a layer hint, a
+   mobile browser has to repaint the blurred region every frame instead of
+   compositing a cached bitmap, will-change promotes each blob to its own
+   GPU layer once, so the ongoing animation is a cheap transform on an
+   already-blurred layer instead of a re-blur every frame. */
+@keyframes aura-drift-a {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(3rem, 2rem) scale(1.15);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+@keyframes aura-drift-b {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2.5rem, 3rem) scale(1.1);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+@keyframes aura-drift-c {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(2rem, -2.5rem) scale(1.2);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+.aura-a,
+.aura-b,
+.aura-c {
+  will-change: transform;
+}
+.aura-a {
+  animation: aura-drift-a 22s var(--ease-premium) infinite;
+}
+.aura-b {
+  animation: aura-drift-b 26s var(--ease-premium) infinite;
+}
+.aura-c {
+  animation: aura-drift-c 19s var(--ease-premium) infinite;
+}
+
+@keyframes node-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.3);
+  }
+}
+.signal-field .node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 3.6s ease-in-out infinite;
+}
+.signal-field .node-1 {
+  animation-delay: 0s;
+}
+.signal-field .node-2 {
+  animation-delay: 0.6s;
+}
+.signal-field .node-3 {
+  animation-delay: 1.2s;
+}
+.signal-field .node-4 {
+  animation-delay: 1.8s;
+}
+.signal-field .node-5 {
+  animation-delay: 2.4s;
+}
+.signal-field .node-6 {
+  animation-delay: 3s;
+}
+
+@keyframes signal-sweep {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  55% {
+    opacity: 0.7;
+  }
+  80% {
+    opacity: 0;
+  }
+}
+.signal-sweep {
+  animation: signal-sweep 5s ease-in-out infinite;
+}
+
+/* Infinite marquee: duplicate the content once, slide to -50% so the loop
+   is seamless. Reduced-motion is handled by the blanket override below
+   (animation-duration forced near-zero), same as every other loop here. */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* "Light passing through the stages": the agent-orchestrator flowchart's
+   connectors are SVG bezier paths (curved fan-out, not straight bars), with
+   a dashed stroke marching along the path itself via stroke-dashoffset,
+   works identically on curves and straight segments alike. */
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+.flow-path {
+  stroke: var(--sage);
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.8;
+  stroke-dasharray: 5 5;
+  animation: flow-dash 0.8s linear infinite;
+}
+
+/* New log lines sliding in on the hero's agent-orchestrator card. Targets
+   --line-opacity (set inline per line) rather than a flat 1, and the
+   className applies `forwards` explicitly, so the settled state is
+   locked in by the animation itself, not left to depend on how a given
+   browser reverts a finished no-fill-mode animation back to the cascade. */
+@keyframes fade-in-up {
+  from {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: var(--line-opacity, 1);
+  }
+}
+.marquee-track {
+  animation: marquee-scroll 32s linear infinite;
+}
+/* Same loop, opposite direction: pairs with .marquee-track so a two-row
+   section (research-marquee.tsx) reads as two lanes of traffic rather than
+   one static list, without a second keyframe to keep in sync. */
+.marquee-track-reverse {
+  animation: marquee-scroll 36s linear infinite;
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .highlight {
+    background-size: 100% 100% !important;
+  }
+  .btn-press:hover,
+  .btn-press:active {
+    transform: none !important;
+  }
+  [class*="hover:-translate-y"]:hover {
+    transform: none !important;
+  }
+}
